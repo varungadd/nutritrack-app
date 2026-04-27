@@ -572,3 +572,28 @@ def gcp_info():
         "project": os.environ.get("GOOGLE_CLOUD_PROJECT", "food-health-varun2003"),
         "google_services": ["Cloud Run", "Cloud Build", "Artifact Registry", "Cloud Logging"]
     })
+
+# ===== GOOGLE CLOUD SERVICES INTEGRATION =====
+import google.cloud.logging as gcp_logging
+import os
+
+def setup_gcp_logging():
+    """Initialize Google Cloud Logging for production on Cloud Run."""
+    try:
+        client = gcp_logging.Client()
+        client.setup_logging()
+        app.logger.info("Google Cloud Logging initialized successfully.")
+    except Exception as e:
+        app.logger.warning(f"GCP Logging not available (local dev): {e}")
+
+setup_gcp_logging()
+
+@app.route('/api/gcp-info')
+def gcp_info():
+    """Returns Google Cloud Run environment metadata."""
+    return jsonify({
+        "service": os.environ.get("K_SERVICE", "local"),
+        "revision": os.environ.get("K_REVISION", "local"),
+        "project": os.environ.get("GOOGLE_CLOUD_PROJECT", "food-health-varun2003"),
+        "google_services": ["Cloud Run", "Cloud Build", "Artifact Registry", "Cloud Logging"]
+    })

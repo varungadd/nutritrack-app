@@ -15,3 +15,10 @@ NutriTrack eliminates manual data entry using AI and hardware integrations. It�
 * **Tech:** Python, Flask, SQLite, Vanilla JS/CSS, Chart.js
 * **A11y:** Fully ARIA compliant
 * **Deploy:** `./deploy.sh` for Google Cloud Run
+
+## ☁️ Google Services Integration
+
+* **Google Cloud Run:** Hosts the containerized application.
+* **Google Cloud Build:** Builds the Docker container.
+* **Google Artifact Registry:** Stores the built container images.
+* **Google Cloud Logging:** Logs all API requests and errors in real-time.
