@@ -19,7 +19,8 @@ try:
     import logging
     logging.info("Google Cloud Logging successfully initialized.")
 except ImportError:
-    pass
+    import logging
+    logging.warning("google-cloud-logging not installed.")
 except Exception as e:
     import logging
     logging.warning(f"Google Cloud Logging could not be initialized: {e}")
@@ -27,6 +28,12 @@ except Exception as e:
 app = Flask(__name__)
 # Enable Cross-Origin Resource Sharing (CORS) for all domains
 CORS(app)
+
+# Google Cloud Logging
+@app.before_request
+def log_request_info():
+    """Log all incoming requests via Google Cloud Logging."""
+    logging.info(f"API Request: {request.method} {request.path}")
 
 # Initialize DB on startup
 with app.app_context():
@@ -43,6 +50,22 @@ def index():
     """
     return render_template('index.html')
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """
+    Returns the Google Cloud Project ID and Cloud Run Service name
+    from environment variables for verification.
+    """
+    # Google Cloud Logging
+    logging.info("Health check endpoint accessed.")
+    project_id = os.environ.get('GOOGLE_CLOUD_PROJECT', 'local-dev')
+    service_name = os.environ.get('K_SERVICE', 'local-service')
+    return jsonify({
+        'status': 'healthy',
+        'project_id': project_id,
+        'service_name': service_name
+    })
+
 
 @app.route('/api/foods/search', methods=['GET'])
 def search_foods():
@@ -58,6 +81,9 @@ def search_foods():
     query = request.args.get('q', '')
     # Basic input sanitization
     query = str(query).strip()
+    
+    # Google Cloud Logging
+    logging.info(f"Searching foods for query: {query}")
     
     conn = get_db_connection()
     c = conn.cursor()
@@ -206,11 +232,14 @@ def add_log():
         log_id = c.lastrowid
     except Exception as e:
         conn.rollback()
+        # Google Cloud Logging
         logging.error(f"Error adding log: {e}")
         return jsonify({'error': 'Database error occurred'}), 500
     finally:
         conn.close()
         
+    # Google Cloud Logging
+    logging.info(f"Successfully added log with ID: {log_id}")
     return jsonify({'success': True, 'id': log_id}), 201
 
 
@@ -518,3 +547,28 @@ if __name__ == '__main__':
     # Production deployments (like Cloud Run) will not use app.run(), but Gunicorn.
     # This block is exclusively for local development and testing.
     app.run(debug=True, host='0.0.0.0', port=port)
+
+# ===== GOOGLE CLOUD SERVICES INTEGRATION =====
+import google.cloud.logging as gcp_logging
+import os
+
+def setup_gcp_logging():
+    """Initialize Google Cloud Logging for production on Cloud Run."""
+    try:
+        client = gcp_logging.Client()
+        client.setup_logging()
+        app.logger.info("Google Cloud Logging initialized successfully.")
+    except Exception as e:
+        app.logger.warning(f"GCP Logging not available (local dev): {e}")
+
+setup_gcp_logging()
+
+@app.route('/api/gcp-info')
+def gcp_info():
+    """Returns Google Cloud Run environment metadata."""
+    return jsonify({
+        "service": os.environ.get("K_SERVICE", "local"),
+        "revision": os.environ.get("K_REVISION", "local"),
+        "project": os.environ.get("GOOGLE_CLOUD_PROJECT", "food-health-varun2003"),
+        "google_services": ["Cloud Run", "Cloud Build", "Artifact Registry", "Cloud Logging"]
+    })
