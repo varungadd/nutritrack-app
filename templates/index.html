@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriTrack - Health & Food Tracker</title>
+    
+    <!-- PWA Setup -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <!-- Dependencies for Hackathon Features -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Barcode Scanner -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar / Navigation -->
+        <nav class="sidebar" data-html2canvas-ignore>
+            <div class="logo">
+                <div class="logo-icon">🥗</div>
+                <h2>NutriTrack</h2>
+            </div>
+            <ul class="nav-links" role="navigation" aria-label="Main Navigation">
+                <li class="active"><a href="#" tabindex="0">Dashboard</a></li>
+                <li><a href="#" tabindex="0">History</a></li>
+                <li><a href="#" tabindex="0">Goals</a></li>
+                <li><a href="#" tabindex="0">Settings</a></li>
+            </ul>
+            
+            <div class="streak-box">
+                <div class="streak-icon">🔥</div>
+                <div class="streak-info">
+                    <span id="streak-count">0</span> Day Streak
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="export-content">
+            <header role="banner">
+                <div class="header-content">
+                    <h1>Daily Dashboard</h1>
+                    <div class="header-actions" data-html2canvas-ignore>
+                        <button id="btn-export-pdf" class="btn-secondary" aria-label="Export Doctor Report">👨‍⚕️ Doctor Report</button>
+                        <div class="date-picker-container">
+                            <input type="date" id="current-date" class="date-picker" aria-label="Select Date">
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Top Section: Goal Tracker & Macros -->
+            <section class="top-dashboard" aria-label="Goal Tracker">
+                <!-- Circular Goal Tracker -->
+                <div class="goal-tracker-card glass-panel relative-box">
+                    <h2>Calorie Goal</h2>
+                    
+                    <!-- Health Score Badge -->
+                    <div class="health-score-badge">
+                        <span id="health-score-value">0</span>
+                        <small>Health Score</small>
+                    </div>
+
+                    <div class="progress-ring-container">
+                        <svg class="progress-ring" width="150" height="150">
+                            <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.1)" stroke-width="12" fill="transparent" r="65" cx="75" cy="75" />
+                            <circle class="progress-ring__circle" id="calorie-ring" stroke="var(--accent-color)" stroke-width="12" fill="transparent" r="65" cx="75" cy="75" />
+                        </svg>
+                        <div class="progress-ring-text">
+                            <span id="cals-percent">0%</span>
+                            <small>of goal</small>
+                        </div>
+                    </div>
+                    <div class="goal-details">
+                        <span id="total-calories">0</span> / <span id="goal-calories">2000</span> kcal
+                    </div>
+                </div>
+
+                <!-- Macros Summary Cards -->
+                <div class="macros-grid">
+                    <div class="macro-card glass-panel protein">
+                        <div class="macro-icon">🍗</div>
+                        <div class="macro-info">
+                            <h3>Protein</h3>
+                            <p><span id="total-protein">0</span> <small>g</small></p>
+                        </div>
+                    </div>
+                    <div class="macro-card glass-panel carbs">
+                        <div class="macro-icon">🥖</div>
+                        <div class="macro-info">
+                            <h3>Carbs</h3>
+                            <p><span id="total-carbs">0</span> <small>g</small></p>
+                        </div>
+                    </div>
+                    <div class="macro-card glass-panel fat">
+                        <div class="macro-icon">🥑</div>
+                        <div class="macro-info">
+                            <h3>Fat</h3>
+                            <p><span id="total-fat">0</span> <small>g</small></p>
+                        </div>
+                    </div>
+                    <!-- Water Tracker -->
+                    <div class="macro-card glass-panel water" role="region" aria-label="Water Tracker">
+                        <div class="macro-icon" aria-hidden="true">💧</div>
+                        <div class="macro-info water-control">
+                            <h3>Water</h3>
+                            <div class="water-actions" data-html2canvas-ignore>
+                                <button id="btn-water-minus" aria-label="Decrease Water">-</button>
+                                <span><span id="water-count">0</span>/8</span>
+                                <button id="btn-water-plus" aria-label="Increase Water">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Insights Section: AI, Insights & Radar Charts -->
+            <section class="insights-section-advanced">
+                <!-- Data Insights Panel -->
+                <div class="insights-panel glass-panel">
+                    <div class="section-header">
+                        <h2>📊 Deep Analytics</h2>
+                        <small>Last 7 Days</small>
+                    </div>
+                    <ul class="insights-list" id="insights-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                    <div class="pattern-box mt-2">
+                        <div><strong>Favorite Food:</strong> <span id="fav-food">--</span></div>
+                        <div><strong>Favorite Meal:</strong> <span id="fav-meal">--</span></div>
+                    </div>
+                </div>
+
+                <!-- AI Suggestions -->
+                <div class="ai-suggestions glass-panel">
+                    <div class="section-header">
+                        <h2>✨ AI Meal Suggestions</h2>
+                        <small>Based on your remaining goals</small>
+                    </div>
+                    <div class="suggestions-list" id="suggestions-list">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Radar Chart -->
+                <div class="chart-container glass-panel">
+                    <h2>Macro Balance</h2>
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </section>
+            
+            <section class="chart-full-width mt-4">
+                <div class="chart-container glass-panel">
+                    <h2>Weekly Nutrition</h2>
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Bottom Section: Logs & Forms -->
+            <section class="content-split mt-4">
+                <!-- Logged Meals -->
+                <div class="meals-container glass-panel">
+                    <div class="section-header">
+                        <h2>Today's Meals</h2>
+                    </div>
+                    <div class="meals-list" id="meals-list">
+                        <div class="empty-state">No meals logged for today.</div>
+                    </div>
+                </div>
+
+                <!-- Add Food Form & BMI -->
+                <div class="forms-column" data-html2canvas-ignore>
+                    <div class="add-food-container glass-panel mb-4 relative-box">
+                        <h2>Log Food</h2>
+                        
+                        <!-- Advanced Input Actions -->
+                        <div class="input-actions mb-4">
+                            <button id="btn-voice-log" class="btn-action" aria-label="Log using voice">🎤 Voice Log</button>
+                            <button id="btn-scan-barcode" class="btn-action" aria-label="Scan food barcode">📷 Scan Barcode</button>
+                        </div>
+
+                        <!-- Barcode Scanner Viewport (Hidden) -->
+                        <div id="scanner-container" style="display:none; position:relative; margin-bottom:1rem; border-radius:8px; overflow:hidden;">
+                            <div id="interactive" class="viewport" style="width:100%; height:200px; background:#000;"></div>
+                            <button id="btn-close-scanner" style="position:absolute; top:5px; right:5px; background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Close</button>
+                        </div>
+
+                        <form id="log-meal-form">
+                            <div class="form-group">
+                                <label for="meal-type">Meal Type</label>
+                                <select id="meal-type" required>
+                                    <option value="Breakfast">Breakfast</option>
+                                    <option value="Lunch">Lunch</option>
+                                    <option value="Dinner">Dinner</option>
+                                    <option value="Snack">Snack</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="food-search">Search Food</label>
+                                <input type="text" id="food-search" placeholder="Type to search (e.g. Dal)..." autocomplete="off" required>
+                                <div class="search-results" id="search-results"></div>
+                            </div>
+                            
+                            <input type="hidden" id="selected-food-id" required>
+
+                            <div id="selected-food-display" class="selected-food-display" style="display: none;">
+                                <span id="selected-food-name"></span>
+                                <button type="button" id="clear-selection" class="btn-clear">✕</button>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="servings">Servings</label>
+                                <input type="number" id="servings" min="0.1" step="0.1" value="1" required>
+                            </div>
+
+                            <button type="submit" class="btn-primary" id="submit-log" disabled>Add to Diary</button>
+                        </form>
+                    </div>
+
+                    <!-- BMI Calculator -->
+                    <div class="bmi-container glass-panel">
+                        <h2>Health Profile</h2>
+                        <form id="profile-form">
+                            <div class="form-row">
+                                <div class="form-group half">
+                                    <label for="height">Height (cm)</label>
+                                    <input type="number" id="height" required>
+                                </div>
+                                <div class="form-group half">
+                                    <label for="weight">Weight (kg)</label>
+                                    <input type="number" id="weight" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="calorie-goal-input">Daily Calorie Goal</label>
+                                <input type="number" id="calorie-goal-input" required>
+                            </div>
+                            
+                            <div class="bmi-result" id="bmi-result">
+                                <div>BMI: <span id="bmi-value">--</span></div>
+                                <div id="bmi-category">--</div>
+                            </div>
+                            
+                            <button type="submit" class="btn-secondary mt-2">Save Profile</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Hidden Doctor Report DOM (Only for PDF Export) -->
+    <div id="doctor-report" style="display:none; padding: 40px; background: white; color: black; font-family: sans-serif;">
+        <h1 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">NutriTrack Medical Report</h1>
+        <p><strong>Date:</strong> <span id="report-date"></span></p>
+        <div style="display:flex; gap: 20px; margin-top:20px;">
+            <div style="flex:1; border:1px solid #ccc; padding:15px; border-radius:8px;">
+                <h3>Patient Profile</h3>
+                <p>Height: <span id="report-height">--</span> cm</p>
+                <p>Weight: <span id="report-weight">--</span> kg</p>
+                <p>BMI: <span id="report-bmi">--</span></p>
+            </div>
+            <div style="flex:1; border:1px solid #ccc; padding:15px; border-radius:8px;">
+                <h3>Summary (Last 7 Days)</h3>
+                <p>Health Score: <span id="report-health-score">--</span> / 100</p>
+                <p>Avg Water: <span id="report-water">--</span> glasses/day</p>
+                <p>Favorite Food: <span id="report-fav-food">--</span></p>
+            </div>
+        </div>
+        <div style="margin-top:30px;">
+            <h3>Nutritional Trends</h3>
+            <ul id="report-trends" style="line-height:1.6;"></ul>
+        </div>
+        <div style="margin-top:40px; text-align:center; color:#666; font-size:12px;">
+            <p>Generated automatically by NutriTrack AI Engine</p>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
